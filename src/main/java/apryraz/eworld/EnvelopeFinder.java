@@ -43,11 +43,11 @@ public class EnvelopeFinder  {
 **/
     int idNextStep, numMovements;
 /**
-*  Array of clauses that represent conclusiones obtained in the last
+*  Array of clauses that represent conclusions obtained in the last
 * call to the inference function, but rewritten using the "past" variables
 *  (t-1)
 **/
-    ArrayList<VecInt> futureToPast = null;
+    ArrayList<VecInt> futureToPast = new ArrayList<>();
 /**
 * the current state of knowledge of the agent (what he knows about
 * every position of the world)
@@ -78,8 +78,10 @@ public class EnvelopeFinder  {
 **/
     int EnvelopePastOffset;
     int EnvelopeFutureOffset;
-    int DetectorOffset;
+    int Sensor1Offset;
     int actualLiteral;
+    int Sensor2Offset;
+    int Sensor3Offset;
 
 
    /**
@@ -308,8 +310,32 @@ public class EnvelopeFinder  {
          // of the agent) and the past is consistent with the future in your Gamma
          // formula
 
+        if(detects.equals("1")){
+            // Sensor 1 has detected an envelope
+            insertClause(new int[]{coordToLineal(x, y, Sensor1Offset)});
+        }
+        else if(detects.equals("2")){
+            // Sensor 2 has detected an envelope
+            insertClause(new int[]{coordToLineal(x, y, Sensor2Offset)});
+        }
+        else if(detects.equals("3")){
+            // Sensor 3 has detected an envelope
+            insertClause(new int[]{coordToLineal(x, y, Sensor3Offset)});
+        }
+        else if(detects.equals("12")){
 
-         // CALL your functions HERE
+        }
+        else if(detects.equals("13")){
+
+        }
+        else if(detects.equals("23")){
+
+        }
+        else if(detects.equals("")){
+
+        }
+
+
     }
 
 
@@ -323,8 +349,12 @@ public class EnvelopeFinder  {
     **/
     public void addLastFutureClausesToPastClauses() throws  IOException,
             ContradictionException, TimeoutException
-    {
 
+    {
+        while(futureToPast.size() > 0){
+            VecInt clause = futureToPast.remove(0);
+            solver.addClause(clause);
+        }
 
     }
 
@@ -343,26 +373,28 @@ public class EnvelopeFinder  {
     public void  performInferenceQuestions() throws  IOException,
             ContradictionException, TimeoutException
     {
-       // EXAMPLE code to check this for position (2,3):
-       // Get variable number for position 2,3 in past variables
-        int linealIndex = coordToLineal(2, 3, EnvelopeFutureOffset);
-       // Get the same variable, but in the past subset
-        int linealIndexPast = coordToLineal(2, 3, EnvelopePastOffset);
+        // Generate all possible positions
+        for(int x = 1; x <= WorldDim; x++){
+            for(int y = 1; y <= WorldDim; y++){
+                // Get variable number for position x,y in future variables
+                int linealIndex = coordToLineal(x, y, EnvelopeFutureOffset);
 
-        VecInt variablePositive = new VecInt();
-        variablePositive.insertFirst(linealIndex);
+                // Get the same variable, but in the past subset
+                int linealIndexPast = coordToLineal(x, y, EnvelopePastOffset);
 
-        // Check if Gamma + variablePositive is unsatisfiable:
-        // This is only AN EXAMPLE for a specific position: (2,3)
-        if (!(solver.isSatisfiable(variablePositive))) {
-              // Add conclusion to list, but rewritten with respect to "past" variables
-              VecInt concPast = new VecInt();
-              concPast.insertFirst(-(linealIndexPast));
+                // Gamma + variablePositive is UNSAT?
+                VecInt variablePositive = new VecInt();
+                variablePositive.insertFirst(linealIndex);
+                if (!(solver.isSatisfiable(variablePositive))) {
+                    // Add conclusion to list, but rewritten with respect to "past" variables
+                    VecInt concPast = new VecInt();
+                    concPast.insertFirst(-(linealIndexPast));
+                    futureToPast.add(concPast);
+                    efstate.set( x , y , "X" );
+                }
+            }
 
-              futureToPast.add(concPast);
-              efstate.set( 2 , 3 , "X" );
         }
-
     }
 
     /**
@@ -374,31 +406,165 @@ public class EnvelopeFinder  {
     public ISolver buildGamma() throws UnsupportedEncodingException,
             FileNotFoundException, IOException, ContradictionException
     {
-        int totalNumVariables = 0;
+        // Total number of boolean variables in gamma formula
+        int totalNumVariables = WorldLinealDim * 5;
 
-        // You must set this variable to the total number of boolean variables
-        // in your formula Gamma
-        // totalNumVariables =  ??
+
         solver = SolverFactory.newDefault();
         solver.setTimeout(3600);
         solver.newVar(totalNumVariables);
         // This variable is used to generate, in a particular sequential order,
-        // the variable indentifiers of all the variables
+        // the variable identifiers of all the variables
         actualLiteral = 1;
 
-        // call here functions to add the differen sets of clauses
-        // of Gamma to the solver object
-        //
-        // EXEMPLE of building a clause:
-        // VecInt Clause = new VecInt();
-        //  insert a literal into the clause:
-        //    Clause.insertFirst(actualLiteral);
-        //
-        //  Insert the clause into the formula:
-        //  solver.addClause(Clause);
-
-
+        pastEnvelopes();
+        futureEnvelopes();
+        pastEnvelopeToFutureEnvelope();
+        sensor1_implications();
+        sensor2_implications();
+        sensor3_implications();
         return solver;
+    }
+
+
+
+    /*
+     * Add the clauses that say that the envelopes must be in some position
+     * with respect to the variables that talk about past positions
+     *
+     * */
+    public void pastEnvelopes() throws UnsupportedEncodingException, FileNotFoundException, IOException, ContradictionException
+    {
+        EnvelopePastOffset = actualLiteral;
+        VecInt pastClause = new VecInt();
+        for (int i = 0; i < WorldLinealDim; i++) {
+            pastClause.insertFirst(actualLiteral);
+            actualLiteral++;
+        }
+        solver.addClause(pastClause);
+    }
+
+    /**
+     * Add the clauses that say that Barcenas must be in some position
+     * with respect to the variables that talk about future positions
+     **/
+    public void futureEnvelopes() throws UnsupportedEncodingException, FileNotFoundException, IOException, ContradictionException
+    {
+        EnvelopeFutureOffset = actualLiteral;
+        VecInt futureClause = new VecInt();
+        for (int i = 0; i < WorldLinealDim; i++) {
+            futureClause.insertFirst(actualLiteral);
+            actualLiteral++;
+        }
+        solver.addClause(futureClause);
+    }
+
+    /**
+     * Add the clauses that say that if in the past we reached the conclusion
+     * that an envelope cannot be in a position (x,y), then this should be also true
+     * in the future
+     **/
+    public void pastEnvelopeToFutureEnvelope() throws UnsupportedEncodingException, FileNotFoundException, IOException, ContradictionException
+    {
+        for (int i = 0; i < WorldLinealDim; i++) {
+            VecInt clause = new VecInt();
+            clause.insertFirst(i + 1);
+            clause.insertFirst(-(i + EnvelopeFutureOffset));
+            solver.addClause(clause);
+        }
+    }
+
+    /**
+     * Add the clauses related to implications between the sensor 1 evidence and
+     * forbidden positions of clauses
+     **/
+    public void sensor1_implications() throws UnsupportedEncodingException, FileNotFoundException, IOException, ContradictionException
+    {
+        // Store the identifier for the first variable of the
+        Sensor1Offset = actualLiteral;
+
+        for (int k = 0; k < WorldLinealDim; k++) {
+            int[] sensor_coords =  linealToCoord(actualLiteral, Sensor1Offset);
+            int sensor_x = sensor_coords[0];
+            int sensor_y = sensor_coords[1];
+
+            insertClause(new int[]{-actualLiteral, -coordToLineal(sensor_x - 1, sensor_y - 1, EnvelopeFutureOffset)});
+            insertClause(new int[]{-actualLiteral, -coordToLineal(sensor_x + 1, sensor_y + 1, EnvelopeFutureOffset)});
+            insertClause(new int[]{-actualLiteral, -coordToLineal(sensor_x + 1, sensor_y - 1, EnvelopeFutureOffset)});
+            insertClause(new int[]{-actualLiteral, -coordToLineal(sensor_x - 1, sensor_y + 1, EnvelopeFutureOffset)});
+
+            insertClause(new int[]{-actualLiteral, -coordToLineal(sensor_x, sensor_y, EnvelopeFutureOffset)});
+
+            actualLiteral++;
+        }
+    }
+
+
+    /**
+     * Add the clauses related to implications between the sensor 2 evidence and
+     * forbidden positions of clauses
+     **/
+    public void sensor2_implications() throws UnsupportedEncodingException, FileNotFoundException, IOException, ContradictionException
+    {
+        // Store the identifier for the first variable of the
+        Sensor2Offset = actualLiteral;
+
+        for (int k = 0; k < WorldLinealDim; k++) {
+            int[] sensor_coords =  linealToCoord(actualLiteral, Sensor2Offset);
+            int sensor_x = sensor_coords[0];
+            int sensor_y = sensor_coords[1];
+
+            insertClause(new int[]{-actualLiteral, -coordToLineal(sensor_x + 1, sensor_y, EnvelopeFutureOffset)});
+            insertClause(new int[]{-actualLiteral, -coordToLineal(sensor_x - 1, sensor_y, EnvelopeFutureOffset)});
+            insertClause(new int[]{-actualLiteral, -coordToLineal(sensor_x, sensor_y - 1, EnvelopeFutureOffset)});
+            insertClause(new int[]{-actualLiteral, -coordToLineal(sensor_x, sensor_y + 1, EnvelopeFutureOffset)});
+
+            insertClause(new int[]{-actualLiteral, -coordToLineal(sensor_x, sensor_y, EnvelopeFutureOffset)});
+
+            actualLiteral++;
+        }
+    }
+
+    /**
+     * Add the clauses related to implications between the sensor 2 evidence and
+     * forbidden positions of clauses
+     **/
+    public void sensor3_implications() throws UnsupportedEncodingException, FileNotFoundException, IOException, ContradictionException
+    {
+        // Store the identifier for the first variable of the
+        Sensor3Offset = actualLiteral;
+
+        for (int k = 0; k < WorldLinealDim; k++) {
+            int[] sensor_coords =  linealToCoord(actualLiteral, Sensor3Offset);
+            int sensor_x = sensor_coords[0];
+            int sensor_y = sensor_coords[1];
+
+            insertClause(new int[]{-actualLiteral, -coordToLineal(sensor_x + 1, sensor_y, EnvelopeFutureOffset)});
+            insertClause(new int[]{-actualLiteral, -coordToLineal(sensor_x - 1, sensor_y, EnvelopeFutureOffset)});
+            insertClause(new int[]{-actualLiteral, -coordToLineal(sensor_x, sensor_y - 1, EnvelopeFutureOffset)});
+            insertClause(new int[]{-actualLiteral, -coordToLineal(sensor_x, sensor_y + 1, EnvelopeFutureOffset)});
+
+            insertClause(new int[]{-actualLiteral, -coordToLineal(sensor_x - 1, sensor_y - 1, EnvelopeFutureOffset)});
+            insertClause(new int[]{-actualLiteral, -coordToLineal(sensor_x + 1, sensor_y + 1, EnvelopeFutureOffset)});
+            insertClause(new int[]{-actualLiteral, -coordToLineal(sensor_x + 1, sensor_y - 1, EnvelopeFutureOffset)});
+            insertClause(new int[]{-actualLiteral, -coordToLineal(sensor_x - 1, sensor_y + 1, EnvelopeFutureOffset)});
+
+            actualLiteral++;
+        }
+    }
+
+    /**
+     * This function builds and adds a clause to the solver
+     * @param vars Array of integers that contains all the variables of the clause with
+     *             their respective symbol.
+     * @throws ContradictionException
+     */
+    public void insertClause(int[] vars) throws ContradictionException {
+        VecInt clause = new VecInt();
+        for(int i = 0; i < vars.length; i++){
+            clause.insertFirst(vars[i]);
+        }
+        solver.addClause(clause);
     }
 
 

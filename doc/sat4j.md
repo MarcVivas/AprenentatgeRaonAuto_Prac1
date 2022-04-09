@@ -70,7 +70,7 @@ import org.sat4j.reader.*;
         solver.addClause(pastClause);
     }
 
-    /**
+   ` /**
     * Add the clauses that say that Barcenas must be in some position
     * with respect to the variables that talk about future positions
     **/
@@ -84,7 +84,7 @@ import org.sat4j.reader.*;
             actualLiteral++;
         }
         solver.addClause(futureClause);
-    }
+    }`
 
     /**
     * Add the clauses that say that if in the past we reached the conclusion

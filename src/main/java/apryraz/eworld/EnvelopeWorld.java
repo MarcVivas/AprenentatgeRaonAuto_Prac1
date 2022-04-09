@@ -48,7 +48,10 @@ public class EnvelopeWorld {
     /**
      * This function loads 4 arguments from the command line:
      *
-     * @param args arg[0] = dimension of the word; arg[1] = num of steps to perform; arg[2] = file name with sequence of steps to perform; arg[3] = file name with list of envelopes positions
+     * @param args arg[0] = dimension of the word;
+     *             arg[1] = num of steps to perform;
+     *             arg[2] = file name with sequence of steps to perform;
+     *             arg[3] = file name with list of envelopes positions
      **/
     public static void main (String[] args) throws ParseFormatException,
             IOException, ContradictionException, TimeoutException {
