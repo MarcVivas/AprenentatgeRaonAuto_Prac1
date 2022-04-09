@@ -26,7 +26,7 @@ import org.sat4j.reader.*;
 
 /**
 *  This agent performs a sequence of movements, and after each
-*  movement it "senses" from the evironment the resulting position
+*  movement it "senses" from the environment the resulting position
 *  and then the outcome from the smell sensor, to try to locate
 *  the position of Envelope
 *
@@ -45,6 +45,7 @@ public class EnvelopeFinder  {
 /**
 *  Array of clauses that represent conclusiones obtained in the last
 * call to the inference function, but rewritten using the "past" variables
+*  (t-1)
 **/
     ArrayList<VecInt> futureToPast = null;
 /**
@@ -71,7 +72,7 @@ public class EnvelopeFinder  {
     int WorldDim, WorldLinealDim;
 
 /**
-*    This set of variables CAN be use to mark the beginning of different sets
+*    This set of variables CAN be used to mark the beginning of different sets
 *    of variables in your propositional formula (but you may have more sets of
 *    variables in your solution).
 **/
@@ -221,7 +222,7 @@ public class EnvelopeFinder  {
             return moveTo(nextPosition.x, nextPosition.y);
         } else {
             System.out.println("NO MORE steps to perform at agent!");
-            return (new AMessage("NOMESSAGE","",""));
+            return (new AMessage("NOMESSAGE","","", ""));
         }
     }
 
@@ -275,8 +276,7 @@ public class EnvelopeFinder  {
     {
         AMessage msg, ans;
 
-        msg = new AMessage( "detectsat", (new Integer(agentX)).toString(),
-                                       (new Integer(agentY)).toString(), "" );
+        msg = new AMessage( "detectsat", (new Integer(agentX)).toString(), (new Integer(agentY)).toString(), "" );
         ans = EnvAgent.acceptMessage( msg );
         System.out.println("FINDER => detecting at : (" + agentX + "," + agentY + ")");
         return ans;
@@ -374,7 +374,7 @@ public class EnvelopeFinder  {
     public ISolver buildGamma() throws UnsupportedEncodingException,
             FileNotFoundException, IOException, ContradictionException
     {
-        int totalNumVariables;
+        int totalNumVariables = 0;
 
         // You must set this variable to the total number of boolean variables
         // in your formula Gamma

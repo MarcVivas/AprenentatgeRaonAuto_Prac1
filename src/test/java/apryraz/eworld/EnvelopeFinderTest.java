@@ -75,7 +75,7 @@ public class EnvelopeFinderTest {
 *
 *  @return returns an ArrayList of TFState with the resulting list of states
 **/
-  ArrayList<TFState> loadListOfTargetStates( int wDim, int numStates, String statesFile ) {
+  ArrayList<EFState> loadListOfTargetStates( int wDim, int numStates, String statesFile ) {
 
      ArrayList<EFState> listOfStates = new ArrayList<EFState>(numStates);
 
@@ -121,9 +121,9 @@ public class EnvelopeFinderTest {
       // You should make TreasureFinder and TreasureWorldEnv objects to  test.
       // Then load sequence of target states, load sequence of steps into the eAgent
       // and then test the sequence calling testMakeSimpleStep once for each step.
-     EnvelopeFinder eAgent  ;
+     EnvelopeFinder eAgent = new EnvelopeFinder(3) ;
      // load information about the World into the EnvAgent
-     EnvelopeWorldEnv envAgent  ;
+     EnvelopeWorldEnv envAgent = new EnvelopeWorldEnv(3, "")  ;
      // Load list of states
      ArrayList<EFState> seqOfStates ;
 
