@@ -278,7 +278,7 @@ public class EnvelopeFinder  {
 
         msg = new AMessage( "detectsat", (new Integer(agentX)).toString(), (new Integer(agentY)).toString(), "" );
         ans = EnvAgent.acceptMessage( msg );
-        System.out.println("FINDER => detecting at : (" + agentX + "," + agentY + ")");
+        System.out.println("FINDER => detecting at : (" + agentX + "," + agentY + ") Sensors output: " + ans.getComp(0));
         return ans;
     }
 

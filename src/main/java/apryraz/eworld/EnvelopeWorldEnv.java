@@ -5,7 +5,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,7 +19,7 @@ public class EnvelopeWorldEnv {
     /**
      * Location of the envelopes
      */
-    Set<Position> envelopesPositions;
+    HashSet<Position> envelopesPositions;
 
 
     /**
@@ -92,7 +91,8 @@ public class EnvelopeWorldEnv {
 
         } else {
             Position currentPos = new Position(Integer.parseInt(msg.getComp(1)), Integer.parseInt(msg.getComp(2)));
-            ans = new AMessage("detectsat", msg.getComp(1), msg.getComp(2), "");
+            String sensorsOutput = getSensorsOutput(currentPos);
+            ans = new AMessage(sensorsOutput, Integer.toString(currentPos.getX()), Integer.toString(currentPos.getY()), "");
 
             // YOU MUST ANSWER HERE TO THE OTHER MESSAGE TYPE:
             //   ( "detectsat", "x" , "y", "" )
@@ -100,6 +100,50 @@ public class EnvelopeWorldEnv {
         }
         return ans;
 
+    }
+
+    /**
+     * This function returns a codification of the sensors output
+     *
+     * @param currentPos Position x,y of the agent
+     * @return "1" -> Sensor 1 has detected an envelope
+     *         "2" -> Sensor 2 has detected an envelope
+     *         "3" -> Sensor 3 has detected an envelope
+     *         "12" -> Sensor 1 and 2 have detected envelopes
+     *         "23" -> Sensor 2 and 3 have detected envelopes
+     *         "13" -> Sensor 1 and 3 have detected envelopes
+     *         "123" -> Sensor 1, 2 and 3 have detected envelopes
+     *         "" -> The sensors haven't detected envelopes
+     */
+    public String getSensorsOutput(Position currentPos){
+        String output = "";
+
+        //Sensor 1
+        Position right = new Position(currentPos.getX() + 1, currentPos.getY());
+        Position left = new Position(currentPos.getX() - 1, currentPos.getY());
+        Position down = new Position(currentPos.getX(), currentPos.getY() - 1);
+        Position up = new Position(currentPos.getX(), currentPos.getY() + 1);
+        if(envelopesPositions.contains(right) || envelopesPositions.contains(left) || envelopesPositions.contains(down) || envelopesPositions.contains(up)){
+            output += "1";
+        }
+
+        //Sensor 2
+        Position leftDown = new Position(currentPos.getX() - 1, currentPos.getY() - 1);
+        Position rightDown = new Position(currentPos.getX() + 1, currentPos.getY() - 1);
+        Position leftUp = new Position(currentPos.getX() - 1, currentPos.getY() + 1);
+        Position rightUp = new Position(currentPos.getX() + 1, currentPos.getY() + 1);
+
+
+        if(envelopesPositions.contains(leftDown) || envelopesPositions.contains(rightDown) || envelopesPositions.contains(leftUp) || envelopesPositions.contains(rightUp)){
+            output += "2";
+        }
+
+        // Sensor 3
+        if(envelopesPositions.contains(currentPos)){
+            output += "3";
+        }
+
+        return output;
     }
 
 

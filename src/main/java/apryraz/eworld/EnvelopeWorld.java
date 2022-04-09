@@ -39,7 +39,9 @@ public class EnvelopeWorld {
         FinderEAgent.loadListOfSteps(numSteps, fileSteps);
 
         // Execute sequence of steps with the Agent
-        FinderEAgent.runNextStep();
+        for(int i = 0; i < numSteps; i++){
+            FinderEAgent.runNextStep();
+        }
 
     }
 

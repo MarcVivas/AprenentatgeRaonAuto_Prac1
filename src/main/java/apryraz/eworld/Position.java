@@ -1,5 +1,7 @@
 package apryraz.eworld;
 
+import java.util.Objects;
+
 public class Position {
  /**
 
@@ -12,6 +14,8 @@ public class Position {
         y = col;
     }
 
+
+
     @Override
     public boolean equals(Object o){
         // If the object is compared with itself then return true
@@ -19,7 +23,7 @@ public class Position {
             return true;
         }
 
-        /* Check if o is an instance of Position or not */
+        // Check if o is an instance of Position or not
         if (!(o instanceof Position)) {
             return false;
         }
@@ -29,6 +33,10 @@ public class Position {
 
         // Compare the data and return accordingly
         return x == c.getX() && y == c.getY();
+    }
+    @Override
+    public int hashCode() {
+        return Objects.hash(x, y);
     }
 
     public int getX() {
