@@ -1,3 +1,5 @@
+package apryraz.eworld;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.Level;
@@ -22,7 +24,7 @@ import static org.junit.Assert.assertEquals;
 import org.junit.*;
 
 /**
- * Class for testing the TreasureFinder agent
+ * Class for testing the EnvelopeFinder agent
  **/
 public class EnvelopeFinderTest {
 
@@ -37,7 +39,8 @@ public class EnvelopeFinderTest {
      **/
     public void testMakeSimpleStep (EnvelopeFinder eAgent, EFState targetState) throws IOException, ContradictionException, TimeoutException {
         // Check (assert) whether the resulting state is equal to
-        //  the targetState after performing action runNextStep with bAgent
+        //  the targetState after performing action runNextStep with the agent
+        assertEquals(eAgent.getState(), targetState);
 
     }
 
@@ -135,13 +138,48 @@ public class EnvelopeFinderTest {
     }
 
     /**
-     * This is an example test. You must replicate this method for each different
-     * test sequence, or use some kind of parametric tests with junit
+     * test1 (states1.txt steps1.txt envelopes1.txt):  5x5 world,  5 steps,  envelopes at  2,2 4,4
+     * For each step the agent makes, check if the state is correct.
      **/
     @Test
-    public void TWorldTest1 () throws
-            IOException, ContradictionException, TimeoutException {
+    public void envelopeWorldTest1 () throws IOException, ContradictionException, TimeoutException {
         testMakeSeqOfSteps(5, 5, "tests/steps1.txt", "tests/states1.txt", "tests/envelopes1.txt");
+    }
+
+    /**
+     * test2 (states2.txt steps2.txt envelopes2.txt): 5x5 world,  7 steps , envelopes at  3,2 3,4
+     * For each step the agent makes, check if the state is correct.
+     **/
+    @Test
+    public void envelopeWorldTest2 () throws IOException, ContradictionException, TimeoutException {
+        testMakeSeqOfSteps(5, 7, "tests/steps2.txt", "tests/states2.txt", "tests/envelopes2.txt");
+    }
+
+    /**
+     * test3 (states3.txt steps3.txt envelopes3.txt): 7x7 world,  6 steps,  envelopes at  3,2 4,4 2,6
+     * For each step the agent makes, check if the state is correct.
+     **/
+    @Test
+    public void envelopeWorldTest3 () throws IOException, ContradictionException, TimeoutException {
+        testMakeSeqOfSteps(7, 6, "tests/steps3.txt", "tests/states3.txt", "tests/envelopes3.txt");
+    }
+
+    /**
+     * test4 (states4.txt steps4.txt envelopes4.txt): 7x7 world,  12 steps , envelopes at  6,2 4,4 2,6
+     * For each step the agent makes, check if the state is correct.
+     **/
+    @Test
+    public void envelopeWorldTest4 () throws IOException, ContradictionException, TimeoutException {
+        testMakeSeqOfSteps(7, 12, "tests/steps4.txt", "tests/states4.txt", "tests/envelopes4.txt");
+    }
+
+    /**
+     * test5 (states5.txt steps5.txt envelopes5.txt): 5x5 world,  5 steps,  envelopes at  2,2 2,3 4,4 5,3
+     * For each step the agent makes, check if the state is correct.
+     **/
+    @Test
+    public void envelopeWorldTest5 () throws IOException, ContradictionException, TimeoutException {
+        testMakeSeqOfSteps(5, 5, "tests/steps5.txt", "tests/states5.txt", "tests/envelopes5.txt");
     }
 
 }
