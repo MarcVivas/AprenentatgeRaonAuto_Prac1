@@ -182,4 +182,13 @@ public class EnvelopeFinderTest {
         testMakeSeqOfSteps(5, 5, "tests/steps5.txt", "tests/states5.txt", "tests/envelopes5.txt");
     }
 
+    /**
+     * test6 (states6.txt steps6.txt envelopes6.txt): 5x5 world,  5 steps,  envelopes at  1,1 2,1 2,2 2,3
+     * For each step the agent makes, check if the state is correct.
+     **/
+    @Test
+    public void envelopeWorldTest6 () throws IOException, ContradictionException, TimeoutException {
+        testMakeSeqOfSteps(5, 5, "tests/steps6.txt", "tests/states6.txt", "tests/envelopes6.txt");
+    }
+
 }
