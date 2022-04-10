@@ -90,16 +90,12 @@ public class EnvelopeWorldEnv {
                 ans = new AMessage("notmovedto", msg.getComp(1), msg.getComp(2), "");
 
         } else {
+            // Generate a new message using the sensors outputs
             Position currentPos = new Position(Integer.parseInt(msg.getComp(1)), Integer.parseInt(msg.getComp(2)));
             String sensorsOutput = getSensorsOutput(currentPos);
             ans = new AMessage(sensorsOutput, Integer.toString(currentPos.getX()), Integer.toString(currentPos.getY()), "");
-
-            // YOU MUST ANSWER HERE TO THE OTHER MESSAGE TYPE:
-            //   ( "detectsat", "x" , "y", "" )
-            //
         }
         return ans;
-
     }
 
     /**
@@ -113,32 +109,35 @@ public class EnvelopeWorldEnv {
      *         "23" -> Sensor 2 and 3 have detected envelopes
      *         "13" -> Sensor 1 and 3 have detected envelopes
      *         "123" -> Sensor 1, 2 and 3 have detected envelopes
-     *         "" -> The sensors haven't detected envelopes
+     *         "" -> The sensors haven't detected any envelopes
      */
     public String getSensorsOutput(Position currentPos){
         String output = "";
 
-        //Sensor 1
+        // Sensor 1 scope
         Position right = new Position(currentPos.getX() + 1, currentPos.getY());
         Position left = new Position(currentPos.getX() - 1, currentPos.getY());
         Position down = new Position(currentPos.getX(), currentPos.getY() - 1);
         Position up = new Position(currentPos.getX(), currentPos.getY() + 1);
+
+        // Check if in the scope of sensor 1 there's an envelope
         if(envelopesPositions.contains(right) || envelopesPositions.contains(left) || envelopesPositions.contains(down) || envelopesPositions.contains(up)){
             output += "1";
         }
 
-        //Sensor 2
+        // Sensor 2 scope
         Position leftDown = new Position(currentPos.getX() - 1, currentPos.getY() - 1);
         Position rightDown = new Position(currentPos.getX() + 1, currentPos.getY() - 1);
         Position leftUp = new Position(currentPos.getX() - 1, currentPos.getY() + 1);
         Position rightUp = new Position(currentPos.getX() + 1, currentPos.getY() + 1);
 
-
+        // Check if in the scope of sensor 2 there's an envelope
         if(envelopesPositions.contains(leftDown) || envelopesPositions.contains(rightDown) || envelopesPositions.contains(leftUp) || envelopesPositions.contains(rightUp)){
             output += "2";
         }
 
-        // Sensor 3
+        // Sensor 3 scope (is the current position of the agent)
+        // Check if in the scope of sensor 2 there's an envelope
         if(envelopesPositions.contains(currentPos)){
             output += "3";
         }

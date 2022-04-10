@@ -13,6 +13,7 @@ import static java.lang.System.exit;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -84,8 +85,11 @@ public class EnvelopeFinder  {
     int Sensor2Offset;
     int Sensor3Offset;
 
-
-   /**
+    /**
+     * Set used to identify the previous conclusions that were already added in previous steps
+     */
+    HashSet<VecInt> previousConsequences = new HashSet<>();
+    /**
      The class constructor must create the initial Boolean formula with the
      rules of the Envelope World, initialize the variables for indicating
      that we do not have yet any movements to perform, make the initial state.
@@ -93,7 +97,7 @@ public class EnvelopeFinder  {
      @param WDim the dimension of the Envelope World
 
    **/
-    public   EnvelopeFinder(int WDim)
+    public EnvelopeFinder(int WDim)
     {
 
         WorldDim = WDim;
@@ -178,18 +182,17 @@ public class EnvelopeFinder  {
 
     /**
     *    Execute the next step in the sequence of steps of the agent, and then
-    *    use the agent sensor to get information from the environment. In the
-    *    original Envelope World, this would be to use the Smelll Sensor to get
-    *    a binary answer, and then to update the current state according to the
-    *    result of the logical inferences performed by the agent with its formula.
+    *    use the agent sensor to get information from the environment
+     *   so that the agent can discard not possible locations for the envelopes.
     *
     **/
-    public void runNextStep() throws
-            IOException,  ContradictionException, TimeoutException
+    public void runNextStep() throws IOException,  ContradictionException, TimeoutException
     {
           
-          // Add the conclusions obtained in the previous step
-          // but as clauses that use the "past" variables
+                                                            /*
+          Add the conclusions obtained in the previous step
+          but as clauses that use the "past" variables
+                                                            */
           addLastFutureClausesToPastClauses();
 
           // Ask to move, and check whether it was successful
@@ -203,7 +206,9 @@ public class EnvelopeFinder  {
           // Perform logical consequence questions for all the positions
           // of the Envelope World
           performInferenceQuestions();
-          efstate.printState();      // Print the resulting knowledge matrix
+
+          // Print the resulting knowledge matrix
+          efstate.printState();
     }
 
 
@@ -296,20 +301,14 @@ public class EnvelopeFinder  {
     *    DetectorValue must be a number that encodes all the valid readings 
     *    of the sensor given the envelopes in the 3x3 square around (x,y)
     **/
-    public void processDetectorSensorAnswer( AMessage ans ) throws
-            IOException, ContradictionException,  TimeoutException
+    public void processDetectorSensorAnswer( AMessage ans ) throws IOException, ContradictionException,  TimeoutException
     {
 
         int x = Integer.parseInt(ans.getComp(1));
         int y = Integer.parseInt(ans.getComp(2));
         String detects = ans.getComp(0);
 
-         // Call your function/functions to add the evidence clauses
-         // to Gamma to then be able to infer new NOT possible positions
-         // This new evidences could be removed at the end of the current step,
-         // if you have saved the consequences over the "past" variables (the memory
-         // of the agent) and the past is consistent with the future in your Gamma
-         // formula
+         // Add the evidence clauses to Gamma to then be able to infer new NOT possible positions
 
         if(detects.equals("1")){
             // Sensor 1 has detected an envelope
@@ -361,9 +360,9 @@ public class EnvelopeFinder  {
     
 
     /**
-    *  This function should add all the clauses stored in the list
+    *  This function adds all the clauses stored in the list
     *  futureToPast to the formula stored in solver.
-    *   Use the function addClause( VecInt ) to add each clause to the solver
+    *  It uses the addClause( VecInt ) function to add each clause to the solver
     *
     **/
     public void addLastFutureClausesToPastClauses() throws  IOException, ContradictionException, TimeoutException
@@ -376,11 +375,12 @@ public class EnvelopeFinder  {
     }
 
     /**
-    * This function should check, using the future variables related
+    * This function checks, using the future variables related
     * to possible positions of Envelope, whether it is a logical consequence
-    * that an envelope is NOT at certain positions. This should be checked for all the
+    * that an envelope is NOT at certain positions. This is checked for all the
     * positions of the Envelope World.
-    * The logical consequences obtained, should be then stored in the futureToPast list
+    *
+    *  The logical consequences obtained, are stored in the futureToPast list
     * but using the variables corresponding to the "past" variables of the same positions
     *
     * An efficient version of this function should try to not add to the futureToPast
@@ -392,20 +392,31 @@ public class EnvelopeFinder  {
         // Generate all possible positions
         for(int x = 1; x <= WorldDim; x++){
             for(int y = 1; y <= WorldDim; y++){
+
                 // Get variable number for position x,y in future variables
                 int linealIndex = coordToLineal(x, y, EnvelopeFutureOffset);
 
                 // Get the same variable, but in the past subset
                 int linealIndexPast = coordToLineal(x, y, EnvelopePastOffset);
 
-                // Gamma + variablePositive is UNSAT?
+                // Gamma + Evidence + variablePositive is UNSAT?
                 VecInt variablePositive = new VecInt();
                 variablePositive.insertFirst(linealIndex);
-                if (!(solver.isSatisfiable(variablePositive))) {
-                    // Add conclusion to list, but rewritten with respect to "past" variables
-                    VecInt concPast = new VecInt();
-                    concPast.insertFirst(-(linealIndexPast));
-                    futureToPast.add(concPast);
+
+                // Check if the conclusion hasn't appeared before
+                if(!previousConsequences.contains(variablePositive)){
+                    if (!(solver.isSatisfiable(variablePositive))) {
+                        // Add conclusion to list, but rewritten with respect to "past" variables
+                        previousConsequences.add(variablePositive);
+                        VecInt concPast = new VecInt();
+                        concPast.insertFirst(-(linealIndexPast));
+                        futureToPast.add(concPast);
+                        efstate.set( x , y , "X" );
+                    }
+                }
+                // The conclusion has appeared earlier
+                else
+                {
                     efstate.set( x , y , "X" );
                 }
             }
@@ -431,6 +442,7 @@ public class EnvelopeFinder  {
         // the variable identifiers of all the variables
         actualLiteral = 1;
 
+        // Add all the clauses
         pastEnvelopes();
         futureEnvelopes();
         pastEnvelopeToFutureEnvelope();
@@ -464,7 +476,7 @@ public class EnvelopeFinder  {
     }
 
     /**
-     * Add the clauses that say that Barcenas must be in some position
+     * Add the clauses that say that the envelopes must be in some position
      * with respect to the variables that talk about future positions
      **/
     public void futureEnvelopes() throws UnsupportedEncodingException, FileNotFoundException, IOException, ContradictionException
@@ -498,6 +510,8 @@ public class EnvelopeFinder  {
     {
         // Store the identifier for the first variable of the
         Sensor1Offset = actualLiteral;
+        Sensor2Offset += Sensor1Offset + WorldLinealDim;
+        Sensor3Offset += Sensor2Offset + WorldLinealDim;
 
         // For each possible position in the world
         for (int k = 0; k < WorldLinealDim; k++) {
@@ -506,8 +520,9 @@ public class EnvelopeFinder  {
             int sensor_y = sensor_coords[1];
             int linealSensor2 = (actualLiteral+WorldLinealDim);
             int linealSensor3 = (actualLiteral+WorldLinealDim*2);
-            ArrayList<Position> noEnvelopePositions = getSensorsPositions(new Position(sensor_x, sensor_y), "1");
 
+            // Positions you know for sure where there won't be an envelope
+            ArrayList<Position> noEnvelopePositions = getSensorsPositions(new Position(sensor_x, sensor_y), "1");
             for(Position pos: noEnvelopePositions){
                 if(withinLimits(pos)){
                     insertClause(new int[]{-actualLiteral, linealSensor2, linealSensor3, -coordToLineal(pos.getX(), pos.getY(), EnvelopeFutureOffset)});
