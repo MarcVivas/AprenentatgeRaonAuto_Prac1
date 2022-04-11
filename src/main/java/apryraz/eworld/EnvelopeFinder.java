@@ -443,21 +443,122 @@ public class EnvelopeFinder  {
         actualLiteral = 1;
 
         // Add all the clauses
-        pastEnvelopes();
-        futureEnvelopes();
-        pastEnvelopeToFutureEnvelope();
-        sensor1_implications();
-        sensor2_implications();
-        sensor3_implications();
-        sensor12_implications();
-        sensor13_implications();
-        sensor23_implications();
-        noDetection_implications();
+        generateClauses();
+        //pastEnvelopes();
+        //futureEnvelopes();
+        //pastEnvelopeToFutureEnvelope();
+        //sensors_implications();
+        //sensor2_implications();
+        //sensor3_implications();
+        //sensor12_implications();
+        //sensor13_implications();
+        //sensor23_implications();
+        //noDetection_implications();
 
         return solver;
     }
 
 
+    public void generateClauses() throws ContradictionException {
+        EnvelopePastOffset = actualLiteral;
+        EnvelopeFutureOffset = EnvelopePastOffset + WorldLinealDim;
+        Sensor1Offset = EnvelopeFutureOffset + WorldLinealDim;
+        Sensor2Offset = Sensor1Offset + WorldLinealDim;
+        Sensor3Offset = Sensor2Offset + WorldLinealDim;
+        // Clause that says that the envelopes must be in some position
+        // with respect to the variables that talk about past positions
+        VecInt pastClause = new VecInt();
+
+        // Clause that says that the envelopes must be in some position
+        // with respect to the variables that talk about future positions
+        VecInt futureClause = new VecInt();
+
+        // For each possible position in the world generate the respective clauses
+        for (int i = 0; i < WorldLinealDim; i++) {
+            // Get literal variables
+            int currentEnvPastLiteral = actualLiteral;
+            int currentEnvFutureLiteral = actualLiteral + WorldLinealDim;
+            int currentSensor1Literal = actualLiteral + WorldLinealDim * 2;
+            int currentSensor2Literal = actualLiteral + WorldLinealDim * 3;
+            int currentSensor3Literal = actualLiteral + WorldLinealDim * 4;
+
+            // Get current position
+            int[] sensorCoords =  linealToCoord(actualLiteral, 1);
+            int sensor_x = sensorCoords[0];
+            int sensor_y = sensorCoords[1];
+
+            // Add the variables to the future and past clauses that say that the envelopes must be in some position
+            pastClause.insertFirst(currentEnvPastLiteral);
+            futureClause.insertFirst(currentEnvFutureLiteral);
+
+
+            /*
+             * Add the clause that says that if in the past we reached the conclusion
+             * that an envelope cannot be in a position (x,y), then this should be also true
+             * in the future
+             */
+            insertClause(new int[]{currentEnvPastLiteral, -currentEnvFutureLiteral});
+
+            // Sensor 1
+            insertSensorClause(
+                    getSensorsPositions(new Position(sensor_x, sensor_y), "1"),
+                    new ArrayList<>(Arrays.asList(-currentSensor1Literal, currentSensor2Literal, currentSensor3Literal))
+            );
+
+            // Sensor 2
+            insertSensorClause(
+                    getSensorsPositions(new Position(sensor_x, sensor_y), "2"),
+                    new ArrayList<>(Arrays.asList(-currentSensor2Literal, currentSensor1Literal, currentSensor3Literal))
+            );
+
+            // Sensor 3
+            insertSensorClause(
+                    getSensorsPositions(new Position(sensor_x, sensor_y), "3"),
+                    new ArrayList<>(Arrays.asList(-currentSensor3Literal, currentSensor1Literal, currentSensor2Literal))
+            );
+
+            // Sensor 1 and 2
+            insertSensorClause(
+                    getSensorsPositions(new Position(sensor_x, sensor_y), "12"),
+                    new ArrayList<>(Arrays.asList(-currentSensor1Literal, -currentSensor2Literal))
+            );
+
+            // Sensor 1 and 3
+            insertSensorClause(
+                    getSensorsPositions(new Position(sensor_x, sensor_y), "13"),
+                    new ArrayList<>(Arrays.asList(-currentSensor1Literal, -currentSensor3Literal))
+            );
+
+            // Sensor 2 and 3
+            insertSensorClause(
+                    getSensorsPositions(new Position(sensor_x, sensor_y), "23"),
+                    new ArrayList<>(Arrays.asList(-currentSensor2Literal, -currentSensor3Literal))
+            );
+
+
+            // No signal from sensors
+            insertSensorClause(
+                    getSensorsPositions(new Position(sensor_x, sensor_y), ""),
+                    new ArrayList<>(Arrays.asList(currentSensor1Literal, currentSensor2Literal, currentSensor3Literal))
+            );
+
+
+            actualLiteral++;
+        }
+        solver.addClause(pastClause);
+        solver.addClause(futureClause);
+    }
+
+    public void insertSensorClause(ArrayList<Position> noEnvelopesPositions, ArrayList<Integer> clause) throws ContradictionException {
+        // Positions you know for sure where there won't be an envelope
+        for(Position pos: noEnvelopesPositions){
+            if(withinLimits(pos)){
+                clause.add(-coordToLineal(pos.getX(), pos.getY(), EnvelopeFutureOffset));
+                insertClause(clause);
+                clause.remove(clause.size()-1);
+            }
+        }
+    }
 
     /**
      * Add the clauses that say that the envelopes must be in some position
@@ -506,7 +607,7 @@ public class EnvelopeFinder  {
      * Add the clauses related to implications between the sensor 1 evidence and
      * forbidden positions of clauses
      **/
-    public void sensor1_implications() throws UnsupportedEncodingException, FileNotFoundException, IOException, ContradictionException
+    public void sensors_implications() throws UnsupportedEncodingException, FileNotFoundException, IOException, ContradictionException
     {
         // Store the identifier for the first variable of the
         Sensor1Offset = actualLiteral;
@@ -518,6 +619,7 @@ public class EnvelopeFinder  {
             int[] sensor_coords =  linealToCoord(actualLiteral, Sensor1Offset);
             int sensor_x = sensor_coords[0];
             int sensor_y = sensor_coords[1];
+            int linealSensor1 = actualLiteral;
             int linealSensor2 = (actualLiteral+WorldLinealDim);
             int linealSensor3 = (actualLiteral+WorldLinealDim*2);
 
@@ -525,9 +627,58 @@ public class EnvelopeFinder  {
             ArrayList<Position> noEnvelopePositions = getSensorsPositions(new Position(sensor_x, sensor_y), "1");
             for(Position pos: noEnvelopePositions){
                 if(withinLimits(pos)){
-                    insertClause(new int[]{-actualLiteral, linealSensor2, linealSensor3, -coordToLineal(pos.getX(), pos.getY(), EnvelopeFutureOffset)});
+                    insertClause(new int[]{-linealSensor1, linealSensor2, linealSensor3, -coordToLineal(pos.getX(), pos.getY(), EnvelopeFutureOffset)});
                 }
             }
+
+            noEnvelopePositions = getSensorsPositions(new Position(sensor_x, sensor_y), "2");
+
+            for(Position pos: noEnvelopePositions){
+                if(withinLimits(pos)){
+                    insertClause(new int[]{-linealSensor2, linealSensor1, linealSensor3, -coordToLineal(pos.getX(), pos.getY(), EnvelopeFutureOffset)});
+                }
+            }
+
+            noEnvelopePositions = getSensorsPositions(new Position(sensor_x, sensor_y), "3");
+
+            for(Position pos: noEnvelopePositions){
+                if(withinLimits(pos)){
+                    insertClause(new int[]{-linealSensor3, linealSensor1, linealSensor2, -coordToLineal(pos.getX(), pos.getY(), EnvelopeFutureOffset)});
+                }
+            }
+
+            noEnvelopePositions = getSensorsPositions(new Position(sensor_x, sensor_y), "12");
+
+            for(Position pos: noEnvelopePositions){
+                if(withinLimits(pos)){
+                    insertClause(new int[]{-linealSensor1, -linealSensor2, -coordToLineal(pos.getX(), pos.getY(), EnvelopeFutureOffset)});
+                }
+            }
+
+            noEnvelopePositions = getSensorsPositions(new Position(sensor_x, sensor_y), "13");
+
+            for(Position pos: noEnvelopePositions){
+                if(withinLimits(pos)){
+                    insertClause(new int[]{-linealSensor1,-linealSensor3, -coordToLineal(pos.getX(), pos.getY(), EnvelopeFutureOffset)});
+                }
+            }
+
+            noEnvelopePositions = getSensorsPositions(new Position(sensor_x, sensor_y), "23");
+
+            for(Position pos: noEnvelopePositions){
+                if(withinLimits(pos)){
+                    insertClause(new int[]{-linealSensor2,-linealSensor3, -coordToLineal(pos.getX(), pos.getY(), EnvelopeFutureOffset)});
+                }
+            }
+
+            noEnvelopePositions = getSensorsPositions(new Position(sensor_x, sensor_y), "");
+
+            for(Position pos: noEnvelopePositions){
+                if(withinLimits(pos)){
+                    insertClause(new int[]{linealSensor2,linealSensor1,linealSensor3, -coordToLineal(pos.getX(), pos.getY(), EnvelopeFutureOffset)});
+                };
+            }
+
             actualLiteral++;
         }
     }
@@ -797,6 +948,19 @@ public class EnvelopeFinder  {
         solver.addClause(clause);
     }
 
+    /**
+     * This function builds and adds a clause to the solver
+     * @param vars Array of integers that contains all the variables of the clause with
+     *             their respective symbol.
+     * @throws ContradictionException
+     */
+    public void insertClause(ArrayList<Integer> vars) throws ContradictionException {
+        VecInt clause = new VecInt();
+        for(int variable: vars){
+            clause.insertFirst(variable);
+        }
+        solver.addClause(clause);
+    }
 
      /**
      * Convert a coordinate pair (x,y) to the integer value  t_[x,y]
