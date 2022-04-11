@@ -1,5 +1,8 @@
 package apryraz.eworld;
 
+/**
+ * Represents the envelope world in a 2D matrix
+ */
 public class EFState {
   /**
 
@@ -27,7 +30,6 @@ public class EFState {
   /* i is the row, j the column
      we assume i and j are given in the range [1,wDim] */
   public void set( int i, int j, String val ) {
-
          matrix[i-1][j-1] = val;
   }
 

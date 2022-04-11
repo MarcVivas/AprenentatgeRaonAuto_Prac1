@@ -124,7 +124,6 @@ public class EnvelopeFinder  {
 
     **/
     public void setEnvironment( EnvelopeWorldEnv environment ) {
-
          EnvAgent =  environment;
     }
 
@@ -554,7 +553,7 @@ public class EnvelopeFinder  {
     }
 
     /**
-     * For a specific position, add all the clauses related to the implications between the sensors
+     * For an specific position, add all the clauses related to the implications between the sensors
      * that are activated and the forbidden positions.
      * @param noEnvelopesPositions Positions you know for sure where there won't be an envelope
      * @param clause List that contains the sensor variables of the clause, the sensors that are or not activated
@@ -581,8 +580,6 @@ public class EnvelopeFinder  {
      * @return A list of positions where you know for sure the envelopes won't be
      */
     public ArrayList<Position> getForbiddenEnvelopesPositions (Position pos, String sensorsOutput){
-        int x = pos.getX();
-        int y = pos.getY();
         ArrayList<Position> output = new ArrayList<>();
 
         switch (sensorsOutput){

@@ -30,8 +30,7 @@ public class EnvelopeFinderTest {
 
 
     /**
-     * This function should execute the next step of the agent, and the assert
-     * whether the resulting state is equal to the targetState
+     * This function asserts whether the current state is equal to the targetState
      *
      * @param eAgent      EnvelopeFinder agent
      * @param targetState the state that should be equal to the resulting state of
@@ -39,9 +38,8 @@ public class EnvelopeFinderTest {
      **/
     public void testMakeSimpleStep (EnvelopeFinder eAgent, EFState targetState) throws IOException, ContradictionException, TimeoutException {
         // Check (assert) whether the resulting state is equal to
-        //  the targetState after performing action runNextStep with the agent
+        // the targetState after performing action runNextStep with the agent
         assertEquals(eAgent.getState(), targetState);
-
     }
 
 
@@ -71,7 +69,7 @@ public class EnvelopeFinderTest {
     /**
      * Load a sequence of states from a file, and return the list
      *
-     * @param WDim       dimension of the world
+     * @param wDim       dimension of the world
      * @param numStates  num of states to read from the file
      * @param statesFile file name with sequence of target states, that should
      *                   be the resulting states after each movement in fileSteps
@@ -116,12 +114,12 @@ public class EnvelopeFinderTest {
      * @param fileEnvelopes
      **/
     public void testMakeSeqOfSteps (int wDim, int numSteps, String fileSteps, String fileStates, String fileEnvelopes) throws IOException, ContradictionException, TimeoutException {
+
         EnvelopeFinder eAgent = new EnvelopeFinder(wDim);
-        // Load information about the World into the EnvAgent
         EnvelopeWorldEnv envAgent = new EnvelopeWorldEnv(wDim, fileEnvelopes);
+
         // Load list of states
         ArrayList<EFState> seqOfStates = loadListOfTargetStates(wDim, numSteps, fileStates);
-
 
         // Load list of steps into the finder agent
         eAgent.loadListOfSteps(numSteps, fileSteps);

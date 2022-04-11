@@ -17,7 +17,7 @@ public class EnvelopeWorldEnv {
      **/
     int WorldDim;
     /**
-     * Location of the envelopes
+     * Locations of the envelopes
      */
     HashSet<Position> envelopesPositions;
 
@@ -38,8 +38,8 @@ public class EnvelopeWorldEnv {
     /**
      * Load the set of envelopes locations
      *
-     * @param envelopeFile name of the file that should contain a
-     *                     set of envelope locations in a single line.
+     * @param envelopeFile name of the file that should contain all
+     *                     the envelope locations in a single line.
      *
      *
      * */
@@ -137,7 +137,7 @@ public class EnvelopeWorldEnv {
         }
 
         // Sensor 3 scope (is the current position of the agent)
-        // Check if in the scope of sensor 2 there's an envelope
+        // Check if in the scope of sensor 3 there's an envelope
         if(envelopesPositions.contains(currentPos)){
             output += "3";
         }
